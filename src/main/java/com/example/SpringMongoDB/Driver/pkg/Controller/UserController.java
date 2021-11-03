@@ -101,7 +101,7 @@ public class UserController {
             return  new ResponseEntity<>(usernameList, HttpStatus.FOUND);
         }catch(Exception ex3){
             LOGGER.info("*** FAILED TO GET USERNAME *** ");
-            CustomException customException =new CustomException(IErrorConstants.INVALIDREQUEST+" "+ex3.getMessage().toString());
+            CustomException customException =new CustomException(IErrorConstants.INVALIDREQUEST+" "+ex3.getMessage().toString().trim());
             customExceptionService.saveException(customException);
         }
         return null;
