@@ -3,6 +3,7 @@ package com.example.SpringMongoDB.Driver.pkg.Dto;
 import com.example.SpringMongoDB.Driver.pkg.model.User;
 import lombok.*;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 
@@ -10,7 +11,9 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDto {
+public class UserDto implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private String name;
     private String country;

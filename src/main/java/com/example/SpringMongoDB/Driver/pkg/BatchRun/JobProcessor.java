@@ -7,8 +7,11 @@ import org.springframework.batch.item.ItemProcessor;
 
 public class JobProcessor implements ItemProcessor<String,String> {
 
-    /** LOGGER */
+    /**
+     * LOGGER
+     */
     Logger LOGGER = LogManager.getLogger(JobProcessor.class);
+
     @Override
     public String process(String item) throws Exception {
 

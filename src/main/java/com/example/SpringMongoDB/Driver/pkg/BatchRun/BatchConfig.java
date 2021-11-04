@@ -46,6 +46,7 @@ public class BatchConfig {
                 .build();
     }
 
+
     @Bean
     public JobReader reader() {
         return new JobReader();

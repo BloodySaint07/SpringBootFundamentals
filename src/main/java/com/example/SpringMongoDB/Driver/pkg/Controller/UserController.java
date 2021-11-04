@@ -46,8 +46,6 @@ public class UserController {
     }
 
     @PostMapping("/createUser")
-    @Cacheable("user-cache")
-    @Transactional
     public ResponseEntity<?> saveUser(@RequestBody UserDto userDto)  {
 
         LOGGER.info("*** Inside saveUser in "+ this.getClass().getName()+" Class");
