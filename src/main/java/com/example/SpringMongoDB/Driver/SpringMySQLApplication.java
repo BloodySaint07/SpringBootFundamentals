@@ -1,8 +1,6 @@
 package com.example.SpringMongoDB.Driver;
 
-import com.example.SpringMongoDB.Driver.pkg.Constants.IErrorConstants;
 import com.example.SpringMongoDB.Driver.pkg.MessagingService.MessageSender;
-import com.example.SpringMongoDB.Driver.pkg.model.CustomException;
 import com.example.SpringMongoDB.Driver.pkg.repository.IUserRepository;
 import com.example.SpringMongoDB.Driver.pkg.service.ICustomExceptionService;
 import org.apache.logging.log4j.LogManager;
@@ -57,12 +55,13 @@ public class SpringMySQLApplication implements CommandLineRunner {
 		}*/
 
 		/**  Messaging  Test */
-		try {
-			String message = "You are a Genius Soumya !!! ";
-			messageSender.send(message);
-		} catch (Exception batchException) {
-			CustomException customException = new CustomException(IErrorConstants.MESSAGINGERROR + " " + batchException.getMessage().toString());
-			customExceptionService.saveException(customException);
-		}
+
+//		try {
+//			String message = "You are a Genius Soumya !!! ";
+//			messageSender.send(message);
+//		} catch (Exception batchException) {
+//			CustomException customException = new CustomException(IErrorConstants.MESSAGINGERROR + " " + batchException.getMessage().toString());
+//			customExceptionService.saveException(customException);
+//		}
 	}
 }
