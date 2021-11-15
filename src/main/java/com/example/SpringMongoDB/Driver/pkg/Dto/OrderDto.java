@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Builder
 @NoArgsConstructor
@@ -16,13 +14,14 @@ public class OrderDto {
 
     private String name;
     private String userId;
+    private String orderTime;
 
     public Order convertToOrder()
     {
         return Order.builder()
                 .orderName(name)
                 .userId(userId)
-                .orderTime(LocalDateTime.now())
+                .orderTime(orderTime)
                 .build();
     }
 }

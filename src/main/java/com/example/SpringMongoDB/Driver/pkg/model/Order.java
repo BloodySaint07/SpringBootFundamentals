@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -25,6 +24,6 @@ public class Order {
     @Column
     private String orderName;
     @Column
-    private LocalDateTime orderTime;
+    private String orderTime;
 
 }
