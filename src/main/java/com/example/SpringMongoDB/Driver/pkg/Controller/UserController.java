@@ -13,6 +13,7 @@ import com.example.SpringMongoDB.Driver.pkg.repository.IOrderRepository;
 import com.example.SpringMongoDB.Driver.pkg.repository.IUserRepository;
 import com.example.SpringMongoDB.Driver.pkg.service.ICustomExceptionService;
 import com.example.SpringMongoDB.Driver.pkg.service.IUserService;
+import io.swagger.annotations.ApiOperation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,6 +81,7 @@ public class UserController {
         return new ResponseEntity<CustomExceptionDto>(customExceptiondto, HttpStatus.CREATED);
     }
 
+    @ApiOperation(value = "Retrieves all Users", notes = " A list of Users and their basic details", response = User.class, responseContainer = "List", produces = "application/json")
     @GetMapping("/allUsers")
     @Cacheable("user-cache")
     @Transactional(readOnly = true)
