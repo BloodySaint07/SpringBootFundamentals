@@ -17,18 +17,26 @@ import io.swagger.annotations.ApiOperation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -54,6 +62,20 @@ public class UserController {
     private IOrderRepository orderRepository;
     @Autowired
     MessageSender messageSender;
+
+    /**
+     * Additional Constants
+     */
+
+    @Value("${uploadDir}")
+    private  String uploadPath;
+    private  String FILE_UPLOAD_URL="http://localhost:8081/api/user/upload";
+    private String DOWNLOAD_URL="http://localhost:8081/api/user/download/";
+    @Value("${downloadPath}")
+    private String DOWNLOAD_PATH;
+
+    @Autowired
+    RestTemplate  restTemplate;
 
 
     @GetMapping("/stat")
@@ -163,6 +185,108 @@ public class UserController {
             CustomException customException = new CustomException(IErrorConstants.FAILEDPDFGEN + " " + e.getMessage().toString().trim());
             customExceptionService.saveException(customException);
             return null;
+        }
+
+
+    }
+
+    @PostMapping(value = "/upload")
+    public boolean uploadFile(@RequestParam("file") MultipartFile file) {
+
+        LOGGER.info(" inside uploadFile() method  of " + this.getClass().getName());
+        try {
+            file.transferTo(new File(uploadPath + file.getOriginalFilename()));
+            return true;
+        } catch (IllegalStateException e) {
+            LOGGER.info(" *** FAILED TO UPLOAD FILE *** ");
+            CustomException customException = new CustomException(IErrorConstants.FAILEDUPLOAD + " " + e.getMessage().toString().trim());
+            customExceptionService.saveException(customException);
+            return false;
+        } catch (IOException e) {
+            LOGGER.info(" *** FAILED TO UPLOAD FILE *** ");
+            CustomException customException = new CustomException(IErrorConstants.FAILEDUPLOAD + " " + e.getMessage().toString().trim());
+            customExceptionService.saveException(customException);
+            return false;
+        } catch (Exception e) {
+            LOGGER.info(" *** FAILED TO UPLOAD FILE ***");
+            CustomException customException = new CustomException(IErrorConstants.FAILEDUPLOAD + " " + e.getMessage().toString().trim());
+            customExceptionService.saveException(customException);
+            return false;
+        }
+
+
+    }
+
+    @GetMapping(value="/download/{fileName}")
+    public ResponseEntity<byte[]> download(@PathVariable("fileName") String fileName) {
+
+        LOGGER.info(" inside download() method  of " + this.getClass().getName());
+
+        try {
+
+            byte[] fileData = Files.readAllBytes(new File(uploadPath + fileName).toPath());
+            LOGGER.info(" *** FileData *** " + fileData);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.IMAGE_JPEG);
+            return new ResponseEntity<byte[]>(fileData, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            LOGGER.info(" *** FAILED TO DOWNLOAD FILE ***");
+            CustomException customException = new CustomException(IErrorConstants.FAILEDOWNLOAD + " " + e.getMessage().toString());
+            customExceptionService.saveException(customException);
+            return null;
+        }
+    }
+
+
+
+    @PostMapping(value="/clientUpload/{fileName}")
+    void uploadClient(@PathVariable("fileName") String fileName) {
+
+        LOGGER.info(" inside uploadClient() method  of " + this.getClass().getName());
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("file", new ClassPathResource(fileName));
+            LOGGER.info(" *** Body *** " + body);
+
+            HttpEntity<MultiValueMap<String, Object>> httpEntity = new HttpEntity<>(body, headers);
+            LOGGER.info(" *** Entity *** " + httpEntity);
+            ResponseEntity<Object> response = restTemplate.postForEntity(FILE_UPLOAD_URL, httpEntity, Object.class);
+            LOGGER.info(" *** Response *** " + response);
+            LOGGER.info(" *** Final Response *** " + response.getBody());
+        } catch (Exception e) {
+            LOGGER.info(" *** CLIENT UPLOAD: FAILED TO UPLOAD FILE  *** ");
+            CustomException customException = new CustomException(IErrorConstants.FAILEDUPLOAD + " " + e.getMessage().toString());
+            customExceptionService.saveException(customException);
+
+        }
+
+
+    }
+
+    @GetMapping(value="/clientDownload/{fileName}")
+    void downloadClient(@PathVariable("fileName") String fileName) {
+
+        LOGGER.info(" inside downloadClient() method  of " + this.getClass().getName());
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_OCTET_STREAM));
+            HttpEntity<String> httpEntity = new HttpEntity<>(headers);
+            LOGGER.info(" *** Download Entity *** " + httpEntity);
+
+            ResponseEntity<byte[]> response = restTemplate.exchange(DOWNLOAD_URL + fileName, HttpMethod.GET, httpEntity, byte[].class);
+            LOGGER.info(" *** Download Response *** " + response);
+            Files.write(Paths.get(DOWNLOAD_PATH + fileName), response.getBody());
+
+        } catch (Exception e) {
+            LOGGER.info(" *** CLIENT DOWNLOADER: FAILED TO DOWNLOAD FILE  *** ");
+            CustomException customException = new CustomException(IErrorConstants.FAILEDOWNLOAD + " " + e.getMessage().toString());
+            customExceptionService.saveException(customException);
+
         }
 
 
