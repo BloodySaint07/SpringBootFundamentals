@@ -12,7 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import reactor.core.publisher.Flux;
 
-import java.time.Duration;
+import java.util.Arrays;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = SpringMySQLApplication.class)
@@ -40,8 +40,13 @@ import java.time.Duration;
 
 		LOGGER.info(" inside testFlux() in " + this.getClass().getName());
 
-		Flux flux = Flux.just("iPhone 12 Mini", "AlienWare G11", "Cricket Cap", "Lays Potato Chips", "Dettol Soap", "Kinghisher Beer", "Basmati Rice");
-		flux.delayElements(Duration.ofSeconds(2)).log().map(data -> data.toString().toUpperCase()).subscribe(new Subscriber() {
+		//Flux flux = Flux.just("iPhone 12 Mini", "AlienWare G11", "Cricket Cap", "Lays Potato Chips", "Dettol Soap", "Kinghisher Beer", "Basmati Rice");
+		Flux flux = Flux.fromIterable(Arrays.asList("iPhone 12 Mini", "AlienWare G11", "Cricket Cap", "Lays Potato Chips", "Dettol Soap", "Kinghisher Beer"));
+		flux
+				//.delayElements(Duration.ofSeconds(2))
+				.log().map(data -> data.toString()
+						.toUpperCase())
+				.subscribe(new Subscriber<String>() {
 
 			private long count = 0;
 			private Subscription subscription;
@@ -50,11 +55,12 @@ import java.time.Duration;
 			public void onSubscribe(Subscription subscription) {
 
 				LOGGER.info(" inside onSubscribe() " + subscription);
-				subscription.request(3);
+				this.subscription=subscription;
+				subscription.request(Long.MAX_VALUE);
 			}
 
 			@Override
-			public void onNext(Object o) {
+			public void onNext(String o) {
 
 				LOGGER.info(" inside onNext() " + o);
 				count++;

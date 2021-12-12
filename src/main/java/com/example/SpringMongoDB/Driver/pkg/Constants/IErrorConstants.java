@@ -13,4 +13,7 @@ public interface IErrorConstants {
     public static final String FAILEDPDFIMAGE="Failed to Fetch PDF Image.";
     public static final String FAILEDUPLOAD="Failed to Upload File.";
     public static final String FAILEDOWNLOAD="Failed to Download File.";
+    public static final String PASSWORDHASHINGERROR="Failed to Hash Password.";
+    public static final String FAILEDTOSAVEUSER="Failed to Save User Data.";
+    public static final String FAILEDLOGIN="Incorrect Username or Password.";
 }

@@ -1,7 +1,9 @@
 package com.example.SpringMongoDB.Driver.pkg.Controller;
 
+import com.example.SpringMongoDB.Driver.pkg.Authentication.PasswordUtils;
 import com.example.SpringMongoDB.Driver.pkg.Constants.IErrorConstants;
 import com.example.SpringMongoDB.Driver.pkg.Dto.CustomExceptionDto;
+import com.example.SpringMongoDB.Driver.pkg.Dto.EmployeeDto;
 import com.example.SpringMongoDB.Driver.pkg.Dto.UserDto;
 import com.example.SpringMongoDB.Driver.pkg.GeneratePDF.PDFGenerator;
 import com.example.SpringMongoDB.Driver.pkg.MessagingService.MessageSender;
@@ -9,9 +11,11 @@ import com.example.SpringMongoDB.Driver.pkg.model.CustomException;
 import com.example.SpringMongoDB.Driver.pkg.model.Order;
 import com.example.SpringMongoDB.Driver.pkg.model.SystemMessage;
 import com.example.SpringMongoDB.Driver.pkg.model.User;
+import com.example.SpringMongoDB.Driver.pkg.repository.IEmployeeRepository;
 import com.example.SpringMongoDB.Driver.pkg.repository.IOrderRepository;
 import com.example.SpringMongoDB.Driver.pkg.repository.IUserRepository;
 import com.example.SpringMongoDB.Driver.pkg.service.ICustomExceptionService;
+import com.example.SpringMongoDB.Driver.pkg.service.IEmployeeService;
 import com.example.SpringMongoDB.Driver.pkg.service.IUserService;
 import io.swagger.annotations.ApiOperation;
 import org.apache.logging.log4j.LogManager;
@@ -33,11 +37,13 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("api/user")
@@ -61,6 +67,12 @@ public class UserController {
     @Autowired
     private IOrderRepository orderRepository;
     @Autowired
+    private IEmployeeService employeeService;
+    @Autowired
+    private IEmployeeRepository employeeRepository;
+    @Autowired
+    PasswordUtils passwordUtils;
+    @Autowired
     MessageSender messageSender;
 
     /**
@@ -68,14 +80,15 @@ public class UserController {
      */
 
     @Value("${uploadDir}")
-    private  String uploadPath;
-    private  String FILE_UPLOAD_URL="http://localhost:8081/api/user/upload";
-    private String DOWNLOAD_URL="http://localhost:8081/api/user/download/";
+    private String uploadPath;
+    private String FILE_UPLOAD_URL = "http://localhost:8081/api/user/upload";
+    private String DOWNLOAD_URL = "http://localhost:8081/api/user/download/";
     @Value("${downloadPath}")
     private String DOWNLOAD_PATH;
+    private static final int length = 8;
 
     @Autowired
-    RestTemplate  restTemplate;
+    RestTemplate restTemplate;
 
 
     @GetMapping("/stat")
@@ -93,6 +106,55 @@ public class UserController {
         userService.saveUser(userDto.convertToUser());
         return new ResponseEntity<UserDto>(userDto, HttpStatus.CREATED);
 
+    }
+
+    @PostMapping("/createEmployee")
+    public ResponseEntity<?> saveEmployee(@RequestBody EmployeeDto employeeDto) {
+
+        try {
+            LOGGER.info("*** Inside saveEmployee in " + this.getClass().getName() + " Class");
+            employeeService.saveEmployee(employeeDto.convertToEmployee());
+            return new ResponseEntity<>(HttpStatus.CREATED);
+        } catch (UnsupportedEncodingException ex3) {
+            LOGGER.info("*** FAILED TO SAVE EMPLOYEE *** ");
+            CustomException customException = new CustomException(IErrorConstants.FAILEDTOSAVEUSER + " " + ex3.getMessage().toString().trim());
+            customExceptionService.saveException(customException);
+        } catch (Exception ex3) {
+            LOGGER.info("*** FAILED TO SAVE EMPLOYEE *** ");
+            CustomException customException = new CustomException(IErrorConstants.FAILEDTOSAVEUSER + " " + ex3.getMessage().toString().trim());
+            customExceptionService.saveException(customException);
+        }
+
+        return null;
+    }
+
+
+    @SuppressWarnings("SpellCheckingInspection")
+    @GetMapping("/validateCredentials")
+    @ResponseBody
+    @Transactional
+    public ResponseEntity<?> validateCredentials(@RequestParam String username, @RequestParam String password) throws SQLException {
+        LOGGER.info("*** Inside validateCredentials in " + this.getClass().getName() + " Class");
+        try {
+            LOGGER.info("*** Inside validateCredentials TEMP LOGGER " + " *** USERNAME *** " + employeeRepository.findUserNameByUserName(username) + " ****** " + " *** PASSWORD *** " + employeeRepository.findPasswordByUsername(username) + this.getClass().getName());
+            String usernameOfEmployee = employeeRepository.findUserNameByUserName(username);
+            String passwordOfEmployee = employeeRepository.findPasswordByUsername(username);
+
+            Optional<String> salt = passwordUtils.generateSaltWithSecretKey();
+            Optional<String> hashThePlainTextPassword = passwordUtils.hashThePlainTextPassword(password, salt.toString());
+            boolean isPasswordMatch = passwordUtils.verifyThePlainTextPasswordWithSecretKey(passwordOfEmployee, hashThePlainTextPassword.toString(), salt.toString());
+            if (isPasswordMatch) {
+                return new ResponseEntity<>(usernameOfEmployee, HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(usernameOfEmployee, HttpStatus.UNAUTHORIZED);
+            }
+
+        } catch (Exception ex3) {
+            LOGGER.info("*** FAILED TO GET USERNAME/PASSWORD *** ");
+            CustomException customException = new CustomException(IErrorConstants.INVALIDREQUEST + " " + ex3.getMessage().toString().trim());
+            customExceptionService.saveException(customException);
+        }
+        return new ResponseEntity<>(IErrorConstants.FAILEDLOGIN, HttpStatus.UNAUTHORIZED);
     }
 
     @PostMapping("/createException")
@@ -217,7 +279,7 @@ public class UserController {
 
     }
 
-    @GetMapping(value="/download/{fileName}")
+    @GetMapping(value = "/download/{fileName}")
     public ResponseEntity<byte[]> download(@PathVariable("fileName") String fileName) {
 
         LOGGER.info(" inside download() method  of " + this.getClass().getName());
@@ -239,8 +301,7 @@ public class UserController {
     }
 
 
-
-    @PostMapping(value="/clientUpload/{fileName}")
+    @PostMapping(value = "/clientUpload/{fileName}")
     void uploadClient(@PathVariable("fileName") String fileName) {
 
         LOGGER.info(" inside uploadClient() method  of " + this.getClass().getName());
@@ -267,7 +328,7 @@ public class UserController {
 
     }
 
-    @GetMapping(value="/clientDownload/{fileName}")
+    @GetMapping(value = "/clientDownload/{fileName}")
     void downloadClient(@PathVariable("fileName") String fileName) {
 
         LOGGER.info(" inside downloadClient() method  of " + this.getClass().getName());

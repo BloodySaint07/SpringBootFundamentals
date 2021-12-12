@@ -1,6 +1,15 @@
 package com.example.SpringMongoDB.Driver.pkg.DataStructure;
 
+import org.springframework.beans.factory.annotation.Value;
+
+import java.io.*;
+import java.util.Properties;
+
 public class StackImpl {
+
+
+    @Value("${SECRET_KEY}")
+    private static String SECRET_KEY;
     public static final int maxSize = 6;
     int top;
     int arr[] = new int[maxSize];
@@ -65,7 +74,7 @@ public class StackImpl {
     }
 
 
-    public static void main(String args[]) {
+    public static void main(String args[]) throws UnsupportedEncodingException {
         StackImpl s = new StackImpl();
 //        s.push(10);
 //        s.push(20);
@@ -74,17 +83,32 @@ public class StackImpl {
 //        System.out.println("Top element is :" + s.peek());
 //        System.out.print("Elements present in stack :");
 //        s.print();
-        s.push(10);
-        s.push(10);
-        s.push(10);
-        s.push(10);
-        s.push(10);
-        s.push(10);
-        s.push(10);
-        s.print();
+//        s.push(10);
+//        s.push(10);
+//        s.push(10);
+//        s.push(10);
+//        s.push(10);
+//        s.push(10);
+//        s.push(10);
+//        s.print();
 
+        try (InputStream input = new FileInputStream("D:\\Eclipse_Workspace\\SpringMySQLDB\\src\\main\\resources\\application.properties")) {
 
+            Properties prop = new Properties();
 
+            // load a properties file
+            prop.load(input);
+
+            // get the property value and print it out
+            System.out.println(prop.getProperty("uploadDir"));
+            System.out.println(prop.getProperty("SECRET_KEY"));
+           // System.out.println(prop.getProperty("db.password"));
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+
+        System.out.println(" SECRET KEY IS "+SECRET_KEY);
 
     }
 }
