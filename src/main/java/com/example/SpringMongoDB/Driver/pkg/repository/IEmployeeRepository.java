@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface IEmployeeRepository extends JpaRepository<Employee, Integer> {
+public interface IEmployeeRepository extends JpaRepository<Employee, Long> {
 
     // Get All Usernames against Name JPQL
     @Query(value = "SELECT USERNAME FROM T_PTY_EMPLOYEE WHERE USERNAME=?1", nativeQuery = true)
@@ -15,5 +15,11 @@ public interface IEmployeeRepository extends JpaRepository<Employee, Integer> {
 
     @Query(value = "SELECT PASSWORD FROM T_PTY_EMPLOYEE WHERE USERNAME=?1", nativeQuery = true)
     String findPasswordByUsername(@Param("username") String username);
+
+    @Query(value = "SELECT EID FROM T_PTY_EMPLOYEE WHERE USERNAME=?1", nativeQuery = true)
+    String findIdByUsername(@Param("username") String username);
+
+    //Employee findByUserName(String username);
+
 
 }

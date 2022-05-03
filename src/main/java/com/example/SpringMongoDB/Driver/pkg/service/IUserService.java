@@ -12,4 +12,5 @@ public interface IUserService {
     String checkStat();
     List<String> getAllUsernames() throws SQLException, SQLDataException;
     List<User> getAllUsers();
+    String isUseNamePresent(String name) throws SQLException, SQLDataException;
 }

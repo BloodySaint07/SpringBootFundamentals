@@ -15,6 +15,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jms.annotation.EnableJms;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.client.RestTemplate;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
@@ -23,6 +26,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @EnableBatchProcessing
 @EnableJms
 @EnableSwagger2
+@EnableAsync
 public class SpringMySQLApplication implements CommandLineRunner {
 
 	/**
@@ -50,6 +54,11 @@ public class SpringMySQLApplication implements CommandLineRunner {
 	@Bean
 	public RestTemplate restTemplate() {
 		return new RestTemplate();
+	}
+
+	@Bean
+	public PasswordEncoder  passwordEncoder(){
+		return new BCryptPasswordEncoder();
 	}
 
 

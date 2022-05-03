@@ -7,19 +7,19 @@ import com.example.SpringMongoDB.Driver.pkg.Dto.EmployeeDto;
 import com.example.SpringMongoDB.Driver.pkg.Dto.UserDto;
 import com.example.SpringMongoDB.Driver.pkg.GeneratePDF.PDFGenerator;
 import com.example.SpringMongoDB.Driver.pkg.MessagingService.MessageSender;
-import com.example.SpringMongoDB.Driver.pkg.model.CustomException;
-import com.example.SpringMongoDB.Driver.pkg.model.Order;
-import com.example.SpringMongoDB.Driver.pkg.model.SystemMessage;
-import com.example.SpringMongoDB.Driver.pkg.model.User;
+import com.example.SpringMongoDB.Driver.pkg.model.*;
 import com.example.SpringMongoDB.Driver.pkg.repository.IEmployeeRepository;
 import com.example.SpringMongoDB.Driver.pkg.repository.IOrderRepository;
 import com.example.SpringMongoDB.Driver.pkg.repository.IUserRepository;
 import com.example.SpringMongoDB.Driver.pkg.service.ICustomExceptionService;
 import com.example.SpringMongoDB.Driver.pkg.service.IEmployeeService;
 import com.example.SpringMongoDB.Driver.pkg.service.IUserService;
+import com.example.SpringMongoDB.Driver.pkg.utilities.JWTGeneratorUtils;
 import io.swagger.annotations.ApiOperation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
@@ -27,9 +27,14 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.*;
 import org.springframework.jms.annotation.EnableJms;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
@@ -38,12 +43,20 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("api/user")
@@ -74,6 +87,12 @@ public class UserController {
     PasswordUtils passwordUtils;
     @Autowired
     MessageSender messageSender;
+
+    @Autowired
+    private JWTGeneratorUtils jwtUtil;
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
 
     /**
      * Additional Constants
@@ -136,7 +155,7 @@ public class UserController {
     public ResponseEntity<?> validateCredentials(@RequestParam String username, @RequestParam String password) throws SQLException {
         LOGGER.info("*** Inside validateCredentials in " + this.getClass().getName() + " Class");
         try {
-            LOGGER.info("*** Inside validateCredentials TEMP LOGGER " + " *** USERNAME *** " + employeeRepository.findUserNameByUserName(username) + " ****** " + " *** PASSWORD *** " + employeeRepository.findPasswordByUsername(username) + this.getClass().getName());
+
             String usernameOfEmployee = employeeRepository.findUserNameByUserName(username);
             String passwordOfEmployee = employeeRepository.findPasswordByUsername(username);
 
@@ -193,7 +212,7 @@ public class UserController {
     @SuppressWarnings("SpellCheckingInspection")
     @GetMapping("/getallusersnames2")
     @ResponseBody
-    @Cacheable("user-cache")
+    //@Cacheable("user-cache")
     @Transactional
     public ResponseEntity<?> getAllUserName2(@RequestParam String name) throws SQLException {
         LOGGER.info("*** Inside getAllUserName2 in " + this.getClass().getName() + " Class");
@@ -201,6 +220,46 @@ public class UserController {
             LOGGER.info("*** Inside getAllUserName2 TEMP LOGGER " + userRepository.findUserNamesByName(name) + " ****** " + userRepository.findUserNamesByName(name).getClass());
             String usernameList = String.valueOf(userRepository.findUserNamesByName(name));
             return new ResponseEntity<>(usernameList, HttpStatus.FOUND);
+        } catch (Exception ex3) {
+            LOGGER.info("*** FAILED TO GET USERNAME *** ");
+            CustomException customException = new CustomException(IErrorConstants.INVALIDREQUEST + " " + ex3.getMessage().toString().trim());
+            customExceptionService.saveException(customException);
+        }
+        return null;
+    }
+
+    @GetMapping("/isUserNameTaken")
+    @ResponseBody
+    //@Cacheable("user-cache")
+    @Transactional
+    public ResponseEntity<?> isUserNameTaken(@RequestParam String name) throws SQLException {
+        LOGGER.info("*** Inside isUserNameTaken in " + this.getClass().getName() + " Class");
+        LOGGER.info("*** Inside isUserNameTaken:Async Implementation in " + this.getClass().getName() + " Class");
+        LOGGER.info("*** Thread Test 1 : *** " + Thread.currentThread().getName()+" *** ");
+
+        String fetchedUserName=null;
+        String isAvailable=null;
+        try {
+
+
+            if (StringUtils.hasText(name) && userService!=null) {
+                Thread.sleep(4000);
+                LOGGER.info("*** Thread Test 2 : *** " + Thread.currentThread().getName()+" *** ");
+                fetchedUserName = userService.isUseNamePresent(name);
+            } else {
+                fetchedUserName = "";
+            }
+            String usernameList = String.valueOf(fetchedUserName);
+            if (StringUtils.hasText(usernameList) && usernameList !=null) {
+                isAvailable = "No.Username already Taken.";
+            } else if(name.equalsIgnoreCase("") || !StringUtils.hasText(name)){
+                isAvailable="Username Field Cannot be Empty";
+            }
+            else{
+                isAvailable = "Yes.Available";
+            }
+            LOGGER.info("*** Thread Test 5 : *** " + Thread.currentThread().getName()+" *** ");
+            return new ResponseEntity<>(isAvailable, HttpStatus.OK);
         } catch (Exception ex3) {
             LOGGER.info("*** FAILED TO GET USERNAME *** ");
             CustomException customException = new CustomException(IErrorConstants.INVALIDREQUEST + " " + ex3.getMessage().toString().trim());
@@ -353,5 +412,160 @@ public class UserController {
 
     }
 
+
+    @PostMapping("/createEmployeeWithPassword")
+    public ResponseEntity<?> saveEmployeeWithPassword(@RequestBody EmployeeDto employeeDto) {
+
+        try {
+            LOGGER.info("*** Inside saveEmployee in " + this.getClass().getName() + " Class");
+            employeeService.saveEmployee(employeeDto.convertToEmployee());
+            return new ResponseEntity<>(HttpStatus.CREATED);
+        } catch (UnsupportedEncodingException ex3) {
+            LOGGER.info("*** FAILED TO SAVE EMPLOYEE *** ");
+            CustomException customException = new CustomException(IErrorConstants.FAILEDTOSAVEUSER + " " + ex3.getMessage().toString().trim());
+            customExceptionService.saveException(customException);
+        } catch (Exception ex3) {
+            LOGGER.info("*** FAILED TO SAVE EMPLOYEE *** ");
+            CustomException customException = new CustomException(IErrorConstants.FAILEDTOSAVEUSER + " " + ex3.getMessage().toString().trim());
+            customExceptionService.saveException(customException);
+        }
+
+        return null;
+    }
+
+
+    @PostMapping("/authenticateEmployee")
+    public String generateToken(@RequestBody EmployeeDto employeeDto) throws Exception {
+
+        /** Adding Logic to Convert Hashed Password */
+        Optional<String> salt = passwordUtils.generateSaltWithSecretKey();
+        Optional<String> hashThePlainTextPassword = passwordUtils.hashThePlainTextPassword(employeeDto.getPassword(), salt.toString());
+       // String passwordConv = hashThePlainTextPassword.toString();
+        String usernameConv = employeeDto.getUsername();
+        String passwordConv =employeeDto.getPassword();
+        UserDetails userDetails = employeeService.loadUserByUsername(usernameConv);
+        //Ends
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(usernameConv, passwordConv,userDetails.getAuthorities())
+                    //new UsernamePasswordAuthenticationToken(usernameConv, passwordConv,userDetails.getAuthorities())
+            );
+        } catch (BadCredentialsException ex) {
+            LOGGER.info("*** FAILED TO Validate EMPLOYEE *** ");
+            CustomException customException = new CustomException("Invalid Username/Password :" + " " + ex.getMessage().toString().trim());
+            customExceptionService.saveException(customException);
+            throw new Exception("Invalid Username/Password");
+
+        }
+        catch (Exception ex) {
+            LOGGER.info("*** FAILED TO Validate EMPLOYEE *** ");
+            CustomException customException = new CustomException("Invalid Username/Password :" + " " + ex.getMessage().toString().trim());
+            customExceptionService.saveException(customException);
+            throw new Exception("Invalid Username/Password");
+
+        }
+        return jwtUtil.generateToken(employeeDto.getUsername());
+    }
+
+    //@Async
+    @GetMapping("/getAllEmployeesWithJSON")
+    public ResponseEntity<List<Employee>>  getAllEmployeesFromDB() {
+        HttpHeaders headers = new HttpHeaders();
+        try {
+            List<Employee> allEmployees = employeeService.getAllEmployees();
+
+            headers.add("Message", "Success: Records Extracted");
+            headers.add("URL", "/getAllEmployeesWithJSON");
+            return new ResponseEntity<>(allEmployees, HttpStatus.FOUND);
+        } catch (Exception ex) {
+            LOGGER.info("*** FAILED TO Extract EMPLOYEE *** ");
+            CustomException customException = new CustomException("Failed to Extract Data" + " " + ex.getMessage().toString().trim());
+            customExceptionService.saveException(customException);
+            ex.printStackTrace();
+        }
+        headers.add("Message", "Could not Fetch Employee Information");
+        return ResponseEntity.badRequest()
+                .headers(headers)
+                .body(null);
+    }
+
+    @GetMapping("/getAllEmployeesWithJSON2")
+    public ResponseEntity<List<Employee>>  getAllEmployeesFromDB2() {
+        HttpHeaders headers = new HttpHeaders();
+        List<Employee> empOutput = new LinkedList<Employee>();
+        Employee individualEmployee = new Employee();
+        try {
+            LOGGER.info(" *** Inside Http Client Call *** ");
+           /* HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:8081/api/user/getAllEmployeesWithJSON"))
+                    .GET() // GET is default
+                    .build();
+
+            headers.add("Message", "SUCCESS :Fetch Employee Information");
+
+            HttpResponse<Void> response = client.send(request,
+                    HttpResponse.BodyHandlers.discarding());
+
+            LOGGER.info(" *** Response after Client call: *** "+response);
+
+            if(response.statusCode() >=200 && response.statusCode() <=399 ){
+                return ResponseEntity.ok().headers(headers).body(null);
+            }
+            else{
+                return new ResponseEntity<>(null, HttpStatus.FORBIDDEN);
+
+            }*/
+
+            HttpClient httpClient = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_2)
+                    .connectTimeout(Duration.ofSeconds(10))
+                    .build();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .GET()
+                    .uri(URI.create("http://localhost:8081/api/user/getAllEmployeesWithJSON"))
+                    .setHeader("User-Agent", "Java 11 HttpClient Bot")
+                    .setHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJEYXJ3aW5AMTIzIiwiaWF0IjoxNjUxNTYyNDUzLCJleHAiOjE2NTE1OTg0NTN9.gVhCQbUre_lOnau4hTYmWc4OO9tEQj-8DWd8ftgOOW8")
+                    .build();
+
+            CompletableFuture<HttpResponse<String>> response =
+                    httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+
+            String result = response.thenApply(HttpResponse::body).get(5, TimeUnit.SECONDS);
+
+            LOGGER.info(" *** Response after Client call: *** " + result);
+
+
+
+            JSONArray array = new JSONArray(result);
+            for (int i = 0; i < array.length(); i++) {
+                JSONObject object = array.getJSONObject(i);
+                individualEmployee.setEid(object.getLong("eid"));
+                individualEmployee.setFirstname(object.getString("firstname"));
+                individualEmployee.setLastname(object.getString("lastname"));
+                individualEmployee.setUsername(object.getString("username"));
+                individualEmployee.setActivity(object.getString("activity"));
+                individualEmployee.setRecordupdated(object.getString("recordupdated"));
+                individualEmployee.setDepartment(object.getString("department"));
+
+                empOutput.add(individualEmployee);
+            }
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(empOutput);
+
+        } catch (Exception ex) {
+            LOGGER.info("*** FAILED TO Extract EMPLOYEE *** ");
+            CustomException customException = new CustomException("Failed to Extract Data" + " " + ex.getMessage().toString().trim());
+            customExceptionService.saveException(customException);
+            ex.printStackTrace();
+        }
+        headers.add("Message", "Could not Fetch Employee Information");
+        return ResponseEntity.badRequest()
+                .headers(headers)
+                .body(null);
+    }
 
 }

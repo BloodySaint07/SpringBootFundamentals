@@ -18,5 +18,8 @@ public interface IUserRepository extends JpaRepository<User, Integer> {
     @Query(value = "SELECT USERNAME FROM T_USER_MASTER", nativeQuery = true)
     List<String> findAllUserNames();
 
+    @Query(value = "SELECT USERNAME FROM T_USER_MASTER WHERE USERNAME=?1", nativeQuery = true)
+    String fetchUserName(@Param("name") String name);
+
 
 }

@@ -1,5 +1,6 @@
 package com.example.SpringMongoDB.Driver.pkg.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,6 +33,7 @@ public class Employee implements Serializable {
     @Column(name = "USERNAME", unique = true, nullable = false)
     private String username;
     @Column(name = "PASSWORD", nullable = false)
+    @JsonIgnore
     private String password;
     @Column(name = "ACTIVITY")
     private String activity;
@@ -40,6 +42,7 @@ public class Employee implements Serializable {
     @Column(name = "DEPARTMENT")
     private String department;
     @Column(name = "COMPANY_START_TIMESTAMP")
+    @JsonIgnore
     private Timestamp timestamp;
 
     public Employee(String firstname, String lastname, String username, String password, String activity, String recordupdated, String department, Timestamp timestamp) {

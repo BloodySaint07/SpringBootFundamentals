@@ -16,4 +16,5 @@ public interface IErrorConstants {
     public static final String PASSWORDHASHINGERROR="Failed to Hash Password.";
     public static final String FAILEDTOSAVEUSER="Failed to Save User Data.";
     public static final String FAILEDLOGIN="Incorrect Username or Password.";
+    public static final String ASYNCCALLFAILED="Async Call Failed.";
 }

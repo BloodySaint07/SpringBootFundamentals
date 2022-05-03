@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
@@ -24,6 +25,8 @@ public class EmployeeDto implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private static final int length=8;
+   // @Autowired
+    private static BCryptPasswordEncoder bcryptPasswordEncoder=new BCryptPasswordEncoder();
 
     /**
      * Logger & Class Dependencies
@@ -59,7 +62,8 @@ public class EmployeeDto implements Serializable {
                 .firstname(firstname)
                 .lastname(lastname)
                 .username(username)
-                .password(hashThePlainTextPassword.toString())
+               // .password(hashThePlainTextPassword.toString())
+               .password(bcryptPasswordEncoder.encode(password))
                 .activity("Y")
                 .recordupdated("N")
                 .department(department)

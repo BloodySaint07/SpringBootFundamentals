@@ -8,6 +8,7 @@ import com.example.SpringMongoDB.Driver.pkg.repository.IUserRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
@@ -15,6 +16,9 @@ import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 @Service
 @Transactional
@@ -27,6 +31,8 @@ public class UserService implements  IUserService {
 
     /** LOGGER */
     Logger LOGGER = LogManager.getLogger(UserService.class);
+    /** Executor */
+    Executor executor= Executors.newFixedThreadPool(30);
 
 
 @Override
@@ -87,6 +93,38 @@ public class UserService implements  IUserService {
             return null;
         }
 
+    }
+
+
+    @Async
+    public String isUseNamePresent(String name) throws SQLException, SQLDataException {
+        CustomException customException = new CustomException();
+        final String[] fetchedUsername = new String[1];
+        LOGGER.info("*** Thread Test 3 : *** " + Thread.currentThread().getName() + " *** ");
+        try {
+            LOGGER.info("*** Thread Test 4 : *** " + Thread.currentThread().getName() + " *** ");
+
+
+            CompletableFuture<Void> futureExecutor = CompletableFuture.runAsync(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            LOGGER.info("*** Inside Run Method "+Thread.currentThread().getName());
+                            fetchedUsername[0] = userRepository.fetchUserName(name);
+                        }
+                    }, executor);
+
+            LOGGER.info("*** Future Executor  " + futureExecutor.get().toString() + "*** ");
+
+            //fetchedUsername = userRepository.fetchUserName(name);
+        } catch (Exception ex3) {
+            LOGGER.info("*** Failed to Extract Given Username [" + name + "]");
+            customException.setErrorMessage(IErrorConstants.INVALIDREQUEST + " " + ex3.getStackTrace().toString());
+            customExceptionService.saveException(customException);
+            return null;
+        }
+
+        return fetchedUsername[0];
     }
 
 }
