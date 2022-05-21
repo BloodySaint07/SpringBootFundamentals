@@ -62,7 +62,8 @@ public class EmployeeAuthenticationConfig  extends WebSecurityConfigurerAdapter 
                 antMatchers("/api/user/authenticateEmployee").
                 permitAll().antMatchers("/api/user/createEmployeeWithPassword").permitAll()
                 .antMatchers("/api/user/getAllEmployeesWithJSON2").permitAll()
-                .antMatchers("/api/user/getAllEmployeesWithJSON").permitAll().
+                .antMatchers("/api/user/getAllEmployeesWithJSON").permitAll()
+                .antMatchers("/api/user/isUserNameTaken").permitAll().
                 anyRequest().
                 authenticated().and().
                 exceptionHandling().and().sessionManagement().

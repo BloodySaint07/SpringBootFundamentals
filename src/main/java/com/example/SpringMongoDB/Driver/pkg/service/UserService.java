@@ -16,7 +16,6 @@ import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -96,7 +95,7 @@ public class UserService implements  IUserService {
     }
 
 
-    @Async
+    @Async("threadPoolTaskExecutor")
     public String isUseNamePresent(String name) throws SQLException, SQLDataException {
         CustomException customException = new CustomException();
         final String[] fetchedUsername = new String[1];
@@ -104,17 +103,17 @@ public class UserService implements  IUserService {
         try {
             LOGGER.info("*** Thread Test 4 : *** " + Thread.currentThread().getName() + " *** ");
 
-
-            CompletableFuture<Void> futureExecutor = CompletableFuture.runAsync(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            LOGGER.info("*** Inside Run Method "+Thread.currentThread().getName());
+//
+//            CompletableFuture<Void> futureExecutor = CompletableFuture.runAsync(
+//                    new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            LOGGER.info("*** Inside Run Method "+Thread.currentThread().getName());
                             fetchedUsername[0] = userRepository.fetchUserName(name);
-                        }
-                    }, executor);
+//                        }
+//                    }, executor);
 
-            LOGGER.info("*** Future Executor  " + futureExecutor.get().toString() + "*** ");
+           // LOGGER.info("*** Future Executor  " + futureExecutor.get().toString() + "*** ");
 
             //fetchedUsername = userRepository.fetchUserName(name);
         } catch (Exception ex3) {

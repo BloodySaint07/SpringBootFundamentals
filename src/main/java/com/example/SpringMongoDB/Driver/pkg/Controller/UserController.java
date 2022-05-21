@@ -249,8 +249,8 @@ public class UserController {
             } else {
                 fetchedUserName = "";
             }
-            String usernameList = String.valueOf(fetchedUserName);
-            if (StringUtils.hasText(usernameList) && usernameList !=null) {
+           // String usernameList = String.valueOf(fetchedUserName);
+            if ( fetchedUserName !=null && StringUtils.hasText(fetchedUserName)   && !fetchedUserName.equalsIgnoreCase("")) {
                 isAvailable = "No.Username already Taken.";
             } else if(name.equalsIgnoreCase("") || !StringUtils.hasText(name)){
                 isAvailable="Username Field Cannot be Empty";
@@ -527,7 +527,7 @@ public class UserController {
                     .GET()
                     .uri(URI.create("http://localhost:8081/api/user/getAllEmployeesWithJSON"))
                     .setHeader("User-Agent", "Java 11 HttpClient Bot")
-                    .setHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJEYXJ3aW5AMTIzIiwiaWF0IjoxNjUxNTYyNDUzLCJleHAiOjE2NTE1OTg0NTN9.gVhCQbUre_lOnau4hTYmWc4OO9tEQj-8DWd8ftgOOW8")
+                    .setHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJEYXJ3aW5AMTIzIiwiaWF0IjoxNjUxNjQyNzM5LCJleHAiOjE2NTE2Nzg3Mzl9.zE-cMmeBzg8FxFxcTjjrsuU1nB-cEEVXk47B20SDrJk")
                     .build();
 
             CompletableFuture<HttpResponse<String>> response =
